@@ -49,7 +49,7 @@
 #    define PHASE_CHANNEL MSKPHASE_9CHANNEL
 
 /* Set LED driver current */
-#    define CKLED2001_CURRENT_TUNE \
+#    define SNLED27351_CURRENT_TUNE \
         { 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12 }
 		
 		
