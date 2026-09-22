@@ -28,6 +28,7 @@
 #define LED_CAPS_LOCK_PIN A0
 #define LED_PIN_ON_STATE 1
 
+
 /* Increase I2C speed to 1000 KHz */
 #define I2C1_TIMINGR_PRESC 0U
 #define I2C1_TIMINGR_SCLDEL 3U
@@ -58,10 +59,10 @@
 #    if defined(RGB_MATRIX_ENABLE) || defined(LED_MATRIX_ENABLE)
 
 #        define LED_DRIVER_SHUTDOWN_PIN C14
-
+/* Индикация Bluetooch устройства */
 #        define HOST_LED_MATRIX_LIST \
-            { 17, 18, 19 }
-
+            { 47, 48, 49 }
+/* Индикация уровня батареи */
 #        define BAT_LEVEL_LED_LIST \
             { 17, 18, 19, 20, 21, 22, 23, 24, 25, 26 }
 
@@ -86,8 +87,7 @@
 #endif // KC_BLUETOOTH_ENABLE
 
 /* Emulated EEPROM configuration */
-#define WEAR_LEVELING_LOGICAL_SIZE 2048
-#define WEAR_LEVELING_BACKING_SIZE (WEAR_LEVELING_LOGICAL_SIZE * 2)
+#define FEE_DENSITY_BYTES FEE_PAGE_SIZE
 #define DYNAMIC_KEYMAP_EEPROM_MAX_ADDR 2047
 
 #define INVERT_OS_SWITCH_STATTE

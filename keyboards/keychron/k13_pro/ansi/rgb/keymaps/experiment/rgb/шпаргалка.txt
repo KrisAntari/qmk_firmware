@@ -1,0 +1,11 @@
+keyboards/keychron/k13/keymaps/<your_name>/
+├── rgb/
+│   ├── rgb.h          # Основной заголовочный файл
+│   ├── core.c         # Базовые настройки RGB
+│   ├── layers.c       # Индикация слоёв
+│   ├── indicators.c   # Caps/Num Lock, батарея
+│   ├── modes.c        # Декоративные эффекты
+│   └── config.h       # LED-индексы для K13 Pro
+└── rules.mk
+
+Если что - тут ещё конь не валялся.

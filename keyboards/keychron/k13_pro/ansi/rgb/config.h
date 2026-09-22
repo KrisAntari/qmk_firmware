@@ -1,18 +1,18 @@
-/* Copyright 2023 @ Keychron (https://www.keychron.com)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+/*Авторское право 2023 @ Keychron (https://www.keychron.com)
+*
+* Эта программа является свободным программным обеспечением: вы можете распространять ее и/или модифицировать
+* она доступна на условиях GNU General Public License, опубликованных
+* Фондом свободного программного обеспечения (Free Software Foundation), либо в версии 2 Лицензии, либо
+(по вашему выбору) в любой более поздней версии.
+*
+* Эта программа распространяется в надежде, что она будет полезна,
+* но БЕЗ КАКИХ-ЛИБО ГАРАНТИЙ; даже без подразумеваемых гарантий
+КОММЕРЧЕСКОЙ ЦЕННОСТИ или ПРИГОДНОСТИ ДЛЯ ОПРЕДЕЛЕННОЙ ЦЕЛИ. Более подробную информацию смотрите в разделе
+* GNU General Public License.
+*
+* Вы должны были получить копию GNU General Public License
+* вместе с этой программой. Если нет, смотрите <http://www.gnu.org/licenses/>.
+*/
 
 #pragma once
 
@@ -25,28 +25,61 @@
 #    define DRIVER_2_LED_TOTAL 43
 #    define RGB_MATRIX_LED_COUNT (DRIVER_1_LED_TOTAL + DRIVER_2_LED_TOTAL)
 
-/* Set to infinit, which is use in USB mode by default */
+/* Установите значение infinit, которое по умолчанию используется в режиме USB */
 #    define RGB_MATRIX_TIMEOUT RGB_MATRIX_TIMEOUT_INFINITE
 
-/* Allow to shutdown driver to save power */
+/* Позволяет выключать драйвер для экономии энергии */
 #    define RGB_MATRIX_DRIVER_SHUTDOWN_ENABLE
 
-/* Turn off backllit if brightness value is low */
+/* Выключите подсветку, если значение яркости низкое */
 #    define RGB_MATRIX_BRIGHTNESS_TURN_OFF_VAL 48
 
 #    define LOW_BAT_IND_INDEX 82
 
-// RGB Matrix Animation modes. Explicitly enabled
-// For full list of effects, see:
+// Режимы анимации RGB-матрицы. Explicitly enabled
+// Полный список эффектов смотрите здесь:
 // https://docs.qmk.fm/#/feature_rgb_matrix?id=rgb-matrix-effects
 
-#    define RGB_MATRIX_KEYPRESSES
-#    define RGB_MATRIX_FRAMEBUFFER_EFFECTS
+#    define RGB_MATRIX_KEYPRESSES			
+#    define RGB_MATRIX_FRAMEBUFFER_EFFECTS	
+//#	define RGB_MATRIX_SOLID_COLOR = 1, Попытка назначить цвет подсветки. Провал.
 
-/* Use first 9 channels of LED driver */
+
+/* Используйте первые 9 каналов светодиодного драйвера */
 #    define PHASE_CHANNEL MSKPHASE_9CHANNEL
 
 /* Set LED driver current */
-#    define SNLED27351_CURRENT_TUNE \
+#    define CKLED2001_CURRENT_TUNE \
         { 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12, 0x12 }
+		
+		
+/* УСТАНОВКА ЗАДЕРЖКИ НАЖАТИЯ КЛАВИШ. НУЖНО ДЛЯ TAP_DANCE */
+#	define TAPPING_TERM 200
+#	define TAPPING_TOGGLE 2 // Количество нажатий для переключения
+#	define TAPPING_TERM_PER_KEY
+#	define IGNORE_MOD_TAP_INTERRUPT // Важно для предотвращения ложных срабатываний
+#	define RETRO_TAPPING // Для удобства двойных нажатий
+#	define PERMISSIVE_HOLD
+#	define TAP_CODE_DELAY 10 // Задержка отправки кодов (10ms)
+/* One Shot Layer: */
+
+//#	define ONESHOT_TAP_TOGGLE 1 // Активировать слой до следующего нажатия
+
+/* Включение поддержки MIDI */
+#	define MIDI_BASIC
+#	define MIDI_ADVANCED
+
+/* Подсветка */
+#define RGBLIGHT_LAYERS
+#define RGBLIGHT_LAYER_BLINK
+#define RGBLIGHT_LAYERS_OVERRIDE_RGB_OFF
+#define RGBLIGHT_LAYERS_POST_UPDATE_DELAY 50 // Задержка обновления слоев (мс)
+
+/* Insert LED  */
+//#define INSERT_LED_INDEX 41
+
+//Количество слоёв
+#define DYNAMIC_KEYMAP_LAYER_COUNT 6
+
+
 #endif

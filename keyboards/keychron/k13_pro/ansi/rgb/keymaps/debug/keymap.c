@@ -1,22 +1,40 @@
-/* Copyright 2023 @ Keychron (https://www.keychron.com)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
 
 #include QMK_KEYBOARD_H
 
-// clang-format off
+// Первый блок тапданса. 
+
+	typedef enum {
+		TD_NONE,
+		TD_UNKNOWN,
+		TD_SINGLE_TAP,
+		TD_SINGLE_HOLD,
+		TD_DOUBLE_TAP
+	} td_state_t;
+
+	typedef struct {
+		bool is_press_action;
+		td_state_t state;
+	} td_tap_t;
+	
+	
+	enum {
+	QUOT_LALL,	//работает.
+	SS_RUB,		// не работает.
+	SS_HASH = SAFE_RANGE,	// работает.
+};
+
+
+	// Укажите функции, которые будут использоваться с вашими клавишами tap dance
+
+	// Функция, связанная со всеми tap dances
+	td_state_t cur_dance(tap_dance_state_t *state);
+
+	// Функции, связанные с индивидуальным tap dances
+	void ql_finished(tap_dance_state_t *state, void *user_data);
+	void ql_reset(tap_dance_state_t *state, void *user_data);
+
+
+// clang-format off /* в файле \qmk_firmware\keyboards\keychron\k13_pro\k13_pro.c в 66 и 68 строке устанавливаются базовые слои. */
 enum layers{
   MAC_BASE,
   MAC_FN,
@@ -57,3 +75,65 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
         _______,            _______,  _______,  _______,  _______,  BAT_LVL,  NK_TOGG,  _______,  _______,  _______,  _______,            _______,            _______,
         _______,  _______,  _______,                                _______,                                _______,  _______,  _______,  _______,  _______,  _______,  _______)
 };
+
+// Определите текущее состояние Tap Dance
+td_state_t cur_dance(tap_dance_state_t *state) {
+    if (state->count == 1) {
+        if (!state->pressed) return TD_SINGLE_TAP;
+        else return TD_SINGLE_HOLD;
+    } else if (state->count == 2) return TD_DOUBLE_TAP;
+    else return TD_UNKNOWN;
+}
+
+// Инициализируйте структуру касания, связанную с примером клавиши tap dance
+static td_tap_t ql_tap_state = {
+    .is_press_action = true,
+    .state = TD_NONE
+};
+
+// Функции, которые управляют действиями клавиши Tap Dance, переключающей слой.
+void ql_finished(tap_dance_state_t *state, void *user_data) {
+    ql_tap_state.state = cur_dance(state);
+    switch (ql_tap_state.state) {
+        case TD_SINGLE_TAP:					// Одинарное нажатие
+            tap_code(KC_APP);				// Вызвать контекстное меню
+            break;
+			
+        case TD_SINGLE_HOLD:				// Одинарное нажатие и удержание
+				layer_on(WIN_FN);			// Включить слой FN
+            break;
+			
+        case TD_DOUBLE_TAP:					// Двойное нажатие
+			if (layer_state_is(WIN_FN)) {	// Проверьте, установлен ли уже этот слой
+                layer_off(WIN_FN);			// Если он уже установлен, то выключите его
+            }else {
+                layer_on(WIN_FN);			// Если этот параметр еще не установлен, то включите слой
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+    // Если клавиша была нажата, а теперь отпущена, то выключите слой
+void ql_reset(tap_dance_state_t *state, void *user_data) {
+    if (ql_tap_state.state == TD_SINGLE_HOLD) {
+        layer_off(WIN_FN);
+    }
+    ql_tap_state.state = TD_NONE;
+}
+
+// Ассоциируйте нашу клавишу Tap Dance с ее функциональностью
+tap_dance_action_t tap_dance_actions[] = {
+    [QUOT_LALL] = ACTION_TAP_DANCE_FN_ADVANCED(NULL, ql_finished, ql_reset),
+};
+
+// Установите длительность нажатия на клавиши для Tap Dance
+uint16_t get_tapping_term(uint16_t keycode, keyrecord_t *record) {
+    switch (keycode) {
+        case QK_TAP_DANCE ... QK_TAP_DANCE_MAX:
+            return 210;
+        default:
+            return TAPPING_TERM;
+    }
+}

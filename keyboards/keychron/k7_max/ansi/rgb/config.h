@@ -16,6 +16,11 @@
 
 #pragma once
 
+
+
+
+
+
 #ifdef RGB_MATRIX_ENABLE
 /* RGB Matrix driver configuration */
 #    define RGB_MATRIX_LED_COUNT 68
@@ -27,7 +32,8 @@
 #    define SNLED27351_PHASE_CHANNEL MSKPHASE_9CHANNEL
 /* Set LED driver current */
 #    define SNLED27351_CURRENT_TUNE \
-        { 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14 }
+        { 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8, 0xC8 } // Было { 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14, 0x14 }
+
 
 /* Set to infinit, which is use in USB mode by default */
 #    define RGB_MATRIX_TIMEOUT RGB_MATRIX_TIMEOUT_INFINITE
@@ -37,7 +43,8 @@
 #    define RGB_MATRIX_BRIGHTNESS_TURN_OFF_VAL 48
 
 /* Indications */
-#    define DIM_CAPS_LOCK
+//#    define SCROLL_LOCK_INDEX 24
+//#    define DIM_CAPS_LOCK //Гасит диод CapsLock когда модификатор включён
 #    define CAPS_LOCK_INDEX 30
 #    define BT_HOST_LED_MATRIX_LIST \
         { 16, 17, 18 }
@@ -48,4 +55,31 @@
 
 #    define RGB_MATRIX_KEYPRESSES
 #    define RGB_MATRIX_FRAMEBUFFER_EFFECTS
+
+/* УСТАНОВКА ЗАДЕРЖКИ НАЖАТИЯ КЛАВИШ. НУЖНО ДЛЯ TAP_DANCE */
+#	define TAPPING_TERM 200
+#	define TAPPING_TOGGLE 2 // Количество нажатий для переключения
+#	define TAPPING_TERM_PER_KEY
+//#	define IGNORE_MOD_TAP_INTERRUPT // Важно для предотвращения ложных срабатываний
+#	define RETRO_TAPPING // Для удобства двойных нажатий
+#	define PERMISSIVE_HOLD
+#	define TAP_CODE_DELAY 10 // Задержка отправки кодов (10ms)
+
+/* Включение поддержки MIDI */
+#	define MIDI_BASIC
+#	define MIDI_ADVANCED
+
+/* Подсветка */
+#define RGBLIGHT_LAYERS
+#define RGBLIGHT_LAYER_BLINK
+#define RGBLIGHT_LAYERS_OVERRIDE_RGB_OFF
+#define RGBLIGHT_LAYERS_POST_UPDATE_DELAY 50 // Задержка обновления слоев (мс)
+
+
+/* Insert LED  */
+//#define INSERT_LED_INDEX 41
+
+//Количество слоёв
+//#define DYNAMIC_KEYMAP_LAYER_COUNT 6
+
 #endif
