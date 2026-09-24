@@ -21,6 +21,13 @@
 #include QMK_KEYBOARD_H
 #include "keychron_common.h"
 #include "tap_dance.h"
+#include "timer.h" //поддержка мигания диодом.
+
+#define NUM_LOCK_LED_INDEX 50
+#define BLINK_INTERVAL_MS 500
+
+static uint16_t blink_timer = 0;
+static bool led_blink_state = false;
 
 enum layers{
   MAC_BASE,
@@ -222,7 +229,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      *│             │       │       │       │       │       │       │       │       │       │       │       │                 │       │
      *│30           │31     │32     │33     │34     │35     │36     │37     │38     │39     │40     │41     │42               │43     │
      *├─────────────┴───┬───┴───┬───┴───┬───┴───┬───┴───┬───┴───┬───┴───┬───┴───┬───┴───┬───┴───┬───┴───┬───┴─────────┬───────┼───────┤
-     *│                 │       │       │       │       │RGB_spd│NKRO   │Fn MIDI│       │       │       │             │       │       │ 
+     *│                 │       │       │       │       │RGB_spd│NumLock│Fn MIDI│NKRO   │       │       │             │       │       │ 
      *│44               │45     │46     │47     │48     │49     │50     │51     │52     │53     │54     │55           │56     │57     │
      *├─────────┬───────┴─┬─────┴───┬───┴───────┴───────┴───────┴───────┴───────┴─────┬─┴─────┬─┴─────┬─┴─────┬───────┼───────┼───────┤
      *│         │         │         │                                                 │       │       │       │       │       │       │
@@ -233,7 +240,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
      KC_ESC,     KC_P1,     KC_P2,     KC_P3,     KC_P4,    KC_P5,     KC_P6,     KC_P7,     KC_P8,     KC_P9,     KC_P0,   KC_PMNS,  KC_PPLS,   _______,             _______,
      RGB_TOG,    BT_HST1,   BT_HST2,   BT_HST3,   P2P4G,    _______,   _______,   _______,   _______,   _______,  _______,  _______,  _______,  _______,             _______,
      _______,    RGB_MOD,   RGB_VAI,   RGB_HUI,   RGB_SAI,  RGB_SPI,   _______,   _______,   _______,   _______,  _______,  _______,            _______,             _______,
-     _______,    RGB_RMOD,  RGB_VAD,   RGB_HUD,   RGB_SAD,  RGB_SPD,   NK_TOGG,   TG(MIDI),   _______,   _______,  _______,                      _______,  _______,   _______,
+     _______,    RGB_RMOD,  RGB_VAD,   RGB_HUD,   RGB_SAD,  RGB_SPD,   KC_NUM,    TG(MIDI),   NK_TOGG,   _______,  _______,                      _______,  _______,   _______,
      _______,    _______,   _______,                                   _______,                                   _______,  _______,  _______,  _______,  _______,   _______),
 	 
 	 /*Layer 5
@@ -398,7 +405,10 @@ void keyboard_post_init_user(void) {
 
 // Индикация
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-
+	if (get_highest_layer(layer_state) != 4) {
+        blink_timer = 0;
+        led_blink_state = false;
+    }
 /*CapsLock Indication */ 
     if (host_keyboard_led_state().caps_lock) {                  
 
@@ -549,6 +559,23 @@ bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
 		RGB_MATRIX_INDICATOR_SET_COLOR(49, 98, 255, 187);
 		RGB_MATRIX_INDICATOR_SET_COLOR(50, 98, 255, 187);
 		RGB_MATRIX_INDICATOR_SET_COLOR(51, 0, 255, 0);
+		// === Индикация NumLock: зелёный при вкл., мигающий красный при выкл. ===
+        led_t led_state = host_keyboard_led_state();
+        if (led_state.num_lock) {
+            RGB_MATRIX_INDICATOR_SET_COLOR(NUM_LOCK_LED_INDEX, 0x00, 0xFF, 0x00); // зелёный
+            blink_timer = 0;
+            led_blink_state = false;
+        } else {
+            if (timer_elapsed(blink_timer) > BLINK_INTERVAL_MS) {
+                led_blink_state = !led_blink_state;
+                blink_timer = timer_read();
+            }
+            if (led_blink_state) {
+                RGB_MATRIX_INDICATOR_SET_COLOR(NUM_LOCK_LED_INDEX, 0xFF, 0x00, 0x00); // красный
+            } else {
+                RGB_MATRIX_INDICATOR_SET_COLOR(NUM_LOCK_LED_INDEX, 0x00, 0x00, 0x00); // тёмный
+            }
+        }
     }
 	// Layer 5
     else if (get_highest_layer(layer_state) == 5) {
