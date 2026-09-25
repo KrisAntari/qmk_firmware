@@ -56,6 +56,26 @@
 #    define RGB_MATRIX_KEYPRESSES
 #    define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 
+/* УСТАНОВКА ЦВЕТА ПОДСВЕТКИ ПО УМОЛЧАНИЮ */
+
+#define RGB_MATRIX_DEFAULT_MODE RGB_MATRIX_SOLID_COLOR
+#define RGB_MATRIX_DEFAULT_HUE  24
+#define RGB_MATRIX_DEFAULT_SAT  34
+#define RGB_MATRIX_DEFAULT_VAL  100
+
+
+/* ОПРЕДЕЛЯЕМ ЭФФЕКТЫ ПОДСВЕТКИ, КОТОРЫЕ БУДУТ В КЛАВИАТУРЕ */
+#define ENABLE_RGB_MATRIX_PIXEL_RAIN
+#define ENABLE_RGB_MATRIX_SOLID_REACTIVE_SIMPLE
+#define ENABLE_RGB_MATRIX_SOLID_SPLASH
+#define ENABLE_RGB_MATRIX_TYPING_HEATMAP
+
+// --- Зависимости для этих эффектов ---
+// Typing Heatmap требует framebuffer effects
+#define RGB_MATRIX_FRAMEBUFFER_EFFECTS
+// Reactive Simple и Solid Splash требуют обработки нажатий
+#define RGB_MATRIX_KEYPRESSES
+
 /* УСТАНОВКА ЗАДЕРЖКИ НАЖАТИЯ КЛАВИШ. НУЖНО ДЛЯ TAP_DANCE */
 #	define TAPPING_TERM 200
 #	define TAPPING_TOGGLE 2 // Количество нажатий для переключения
