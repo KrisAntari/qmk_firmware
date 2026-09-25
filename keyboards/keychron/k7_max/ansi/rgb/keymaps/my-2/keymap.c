@@ -14,7 +14,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Стоит запилить:
+// Стоит запилить: 1. Навести порядок в TapDance и в раскладке (там дубликаты)
 // 3. Оптимизировать USB-эндпоинты.  5. Навести красивостей с анимацией подсветки.
 
 #include QMK_KEYBOARD_H
@@ -29,12 +29,22 @@
 #define IDLE_BEFORE_RAIN_MS      120000UL  // 2 минуты до включения Pixel Rain
 #define BATTERY_RAIN_DURATION_MS 300000UL  // 5 минут работы Pixel Rain от батареи
 
-static uint32_t last_activity_time = 0;
-static uint8_t  previous_mode      = 0;
-static bool     rain_active        = false;
-static bool     rain_from_battery  = false;
-static uint32_t rain_started_at    = 0;
-static bool     rain_suppressed    = false;  // true после battery-таймаута: не запускать rain до активности
+// Явная машина состояний вместо набора флагов:
+//  ACTIVE: пользователь активен, идёт обычная подсветка
+//  RAIN:   простой, работает Pixel Rain
+//  OFF:    простой от батареи истёк, подсветка погашена (но RGB включён!)
+typedef enum {
+    IDLE_STATE_ACTIVE = 0,
+    IDLE_STATE_RAIN,
+    IDLE_STATE_OFF
+} idle_state_t;
+
+static idle_state_t idle_state          = IDLE_STATE_ACTIVE;
+static uint8_t      previous_mode       = 0;      // режим для возврата
+static HSV          previous_hsv        = {0,0,0}; // цвет/яркость для возврата
+static uint32_t     last_activity_time  = 0;
+static uint32_t     rain_started_at     = 0;
+static bool         rain_from_battery   = false;
 
 // Вспомогательная функция: работаем от батареи?
 #include "usb_util.h"
@@ -333,12 +343,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     // --- Логика простоя ---
     if (record->event.pressed) {
         last_activity_time = timer_read32(); // Сбрасываем таймер простоя
-        rain_suppressed    = false;          // Активность снимает блокировку после battery-таймаута
 
-        // Любая активность (в т.ч. от батареи) возвращает предыдущий эффект
-        if (rain_active) {
+        // Если были в RAIN или OFF — возвращаемся к нормальной подсветке.
+        // Заодно явно включаем RGB: на случай, если ранее он был выключен
+        // (battery-таймаут в новой логике RGB не выключает, но мало ли).
+        if (idle_state != IDLE_STATE_ACTIVE) {
+            rgb_matrix_enable_noeeprom();
             rgb_matrix_mode_noeeprom(previous_mode);
-            rain_active = false;
+            rgb_matrix_sethsv_noeeprom(previous_hsv.h, previous_hsv.s, previous_hsv.v);
+            idle_state = IDLE_STATE_ACTIVE;
         }
     }
     // --- Конец логики простоя ---
@@ -427,8 +440,8 @@ void keyboard_post_init_user(void) {
     // Инициализация логики простоя
     last_activity_time = timer_read32();
     previous_mode      = rgb_matrix_get_mode();
+    previous_hsv       = rgb_matrix_config.hsv;
 }
-
 
 // ==================================================
 // Эффект простоя
@@ -437,36 +450,35 @@ void keyboard_post_init_user(void) {
 void matrix_scan_user(void) {
     uint32_t now = timer_read32();
 
-    // --- Если Pixel Rain уже активен ---
-    if (rain_active) {
-        if (rain_from_battery) {
-            // От батареи: через 5 минут выключаем подсветку полностью
-            if (timer_elapsed32(rain_started_at) > BATTERY_RAIN_DURATION_MS) {
-                rgb_matrix_disable_noeeprom();
-                rain_active     = false;
-                rain_suppressed = true; // не запускать rain снова, пока не будет активности
+    switch (idle_state) {
+        case IDLE_STATE_ACTIVE:
+            if (timer_elapsed32(last_activity_time) > IDLE_BEFORE_RAIN_MS) {
+                previous_mode     = rgb_matrix_get_mode();
+                previous_hsv      = rgb_matrix_config.hsv;
+                rain_from_battery = is_on_battery();
+                rain_started_at   = now;
+
+                rgb_matrix_enable_noeeprom();
+                rgb_matrix_mode_noeeprom(RGB_MATRIX_PIXEL_RAIN);
+                idle_state = IDLE_STATE_RAIN;
             }
-        }
-        // От USB: держим эффект, пока не будет нажата клавиша.
-        // Сброс произойдёт в process_record_user.
-        return;
-    }
+            break;
 
-    // После battery-таймаута не запускаем rain до следующей активности пользователя
-    if (rain_suppressed) {
-        return;
-    }
+        case IDLE_STATE_RAIN:
+            if (rain_from_battery &&
+                timer_elapsed32(rain_started_at) > BATTERY_RAIN_DURATION_MS) {
+                // Всё так же переключаем режим на SOLID_COLOR + HSV(0,0,0),
+                // но теперь это лишь «подготовка». Реальное гашение LEDs
+                // делает rgb_matrix_indicators_advanced_user ниже.
+                rgb_matrix_mode_noeeprom(RGB_MATRIX_SOLID_COLOR);
+                rgb_matrix_sethsv_noeeprom(0, 0, 0);
+                idle_state = IDLE_STATE_OFF;
+            }
+            break;
 
-    // --- Если Pixel Rain ещё не активен и прошло 2 минуты простоя ---
-    if (timer_elapsed32(last_activity_time) > IDLE_BEFORE_RAIN_MS) {
-        previous_mode = rgb_matrix_get_mode(); // Запоминаем текущий эффект
-
-        // На случай, если RGB был погашен предыдущим battery-таймаутом
-        rgb_matrix_enable_noeeprom();
-        rgb_matrix_mode_noeeprom(RGB_MATRIX_PIXEL_RAIN);
-        rain_active       = true;
-        rain_started_at   = now;
-        rain_from_battery = is_on_battery();
+        case IDLE_STATE_OFF:
+            // Ждём активности пользователя. Возврат — в process_record_user.
+            break;
     }
 }
 
@@ -475,8 +487,27 @@ void matrix_scan_user(void) {
 // ==================================================
 
 bool rgb_matrix_indicators_advanced_user(uint8_t led_min, uint8_t led_max) {
-    const uint8_t layer = get_highest_layer(layer_state);
+    // В OFF-состоянии принудительно обнуляем все LED текущего чанка.
+    // Это гарантирует чёрный кадр независимо от того, что вернул эффект,
+    // и не оставляет «остаточную» подсветку, когда battery-таймаут
+    // переключил режим на SOLID_COLOR + HSV(0,0,0).
+    if (idle_state == IDLE_STATE_OFF) {
+        for (uint8_t i = led_min; i < led_max; i++) {
+            rgb_matrix_set_color(i, 0, 0, 0);
+        }
+        return true; // пропускаем штатные индикаторы QMK
+    }
+
+    const uint8_t layer     = get_highest_layer(layer_state);
     const led_t   led_state = host_keyboard_led_state();
+
+// Гасим указанные LED на всех слоях, кроме MIDI
+    if (!layer_state_is(MIDI)) {
+        static const uint8_t off_leds[] = {14, 29, 43, 57, 58, 59, 60, 61, 62, 63, 64};
+        for (uint8_t i = 0; i < sizeof(off_leds) / sizeof(off_leds[0]); i++) {
+            RGB_MATRIX_INDICATOR_SET_COLOR(off_leds[i], 0, 0, 0);
+        }
+    }
 
     // Сбрасываем мигание везде, кроме слоя FN2
     if (layer != FN2) {
